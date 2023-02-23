@@ -262,7 +262,7 @@ bool ll_cam_start(cam_obj_t *cam, int frame_pos)
     I2S0.conf.rx_start = 0;
 
     I2S_ISR_ENABLE(in_suc_eof);
-
+    
     I2S0.conf.rx_reset = 1;
     I2S0.conf.rx_reset = 0;
     I2S0.conf.rx_fifo_reset = 1;
@@ -464,8 +464,8 @@ bool ll_cam_dma_sizes(cam_obj_t *cam)
 {
     cam->dma_bytes_per_item = ll_cam_bytes_per_sample(sampling_mode);
     if (cam->jpeg_mode) {
-        cam->dma_half_buffer_cnt = 8;
-        cam->dma_node_buffer_size = 2048;
+        cam->dma_half_buffer_cnt = 4;
+        cam->dma_node_buffer_size = cam->width * cam->dma_bytes_per_item > 2048 ? 2048 :cam->width * cam->dma_bytes_per_item;
         cam->dma_half_buffer_size = cam->dma_node_buffer_size * 2;
         cam->dma_buffer_size = cam->dma_half_buffer_cnt * cam->dma_half_buffer_size;
     } else {

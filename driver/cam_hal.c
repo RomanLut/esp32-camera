@@ -43,6 +43,7 @@ static cam_obj_t *cam_obj = NULL;
 
 static const uint32_t JPEG_SOI_MARKER = 0xFFD8FF;  // written in little-endian for esp32
 static const uint16_t JPEG_EOI_MARKER = 0xD9FF;  // written in little-endian for esp32
+size_t (*data_available_callback)(void * cam_obj,const uint8_t* data, size_t count, bool last);
 
 static int cam_verify_jpeg_soi(const uint8_t *inbuf, uint32_t length)
 {
@@ -111,12 +112,16 @@ void IRAM_ATTR ll_cam_send_event(cam_obj_t *cam, cam_event_t cam_event, BaseType
 }
 
 //Copy fram from DMA dma_buffer to fram dma_buffer
+
+
 static void cam_task(void *arg)
 {
     int cnt = 0;
     int frame_pos = 0;
     cam_obj->state = CAM_STATE_IDLE;
     cam_event_t cam_event = 0;
+
+
 
     xQueueReset(cam_obj->event_queue);
 
@@ -149,16 +154,23 @@ static void cam_task(void *arg)
                             DBG_PIN_SET(0);
                             continue;
                         }
-                        frame_buffer_event->len += ll_cam_memcpy(cam_obj,
-                            &frame_buffer_event->buf[frame_buffer_event->len],
+                        // frame_buffer_event->len += ll_cam_memcpy(cam_obj,
+                        //     &frame_buffer_event->buf[frame_buffer_event->len],
+                        //     &cam_obj->dma_buffer[(cnt % cam_obj->dma_half_buffer_cnt) * cam_obj->dma_half_buffer_size],
+                        //     cam_obj->dma_half_buffer_size);
+
+                        frame_buffer_event->len += data_available_callback((void *)cam_obj,
                             &cam_obj->dma_buffer[(cnt % cam_obj->dma_half_buffer_cnt) * cam_obj->dma_half_buffer_size],
-                            cam_obj->dma_half_buffer_size);
+                            cam_obj->dma_half_buffer_size,
+                            false);
+                        
                     }
                     //Check for JPEG SOI in the first buffer. stop if not found
-                    if (cam_obj->jpeg_mode && cnt == 0 && cam_verify_jpeg_soi(frame_buffer_event->buf, frame_buffer_event->len) != 0) {
-                        ll_cam_stop(cam_obj);
-                        cam_obj->state = CAM_STATE_IDLE;
-                    }
+                    // if (cam_obj->jpeg_mode && cnt == 0 && cam_verify_jpeg_soi(frame_buffer_event->buf, frame_buffer_event->len) != 0) {
+                    //     ll_cam_stop(cam_obj);
+                    //     cam_obj->state = CAM_STATE_IDLE;
+                    // }
+
                     cnt++;
 
                 } else if (cam_event == CAM_VSYNC_EVENT) {
@@ -172,16 +184,22 @@ static void cam_task(void *arg)
                                     ESP_LOGW(TAG, "FB-OVF");
                                     cnt--;
                                 } else {
-                                    frame_buffer_event->len += ll_cam_memcpy(cam_obj,
-                                        &frame_buffer_event->buf[frame_buffer_event->len],
-                                        &cam_obj->dma_buffer[(cnt % cam_obj->dma_half_buffer_cnt) * cam_obj->dma_half_buffer_size],
-                                        cam_obj->dma_half_buffer_size);
+                                    // frame_buffer_event->len += ll_cam_memcpy(cam_obj,
+                                    //     &frame_buffer_event->buf[frame_buffer_event->len],
+                                    //     &cam_obj->dma_buffer[(cnt % cam_obj->dma_half_buffer_cnt) * cam_obj->dma_half_buffer_size],
+                                    //     cam_obj->dma_half_buffer_size);
+                                    frame_buffer_event->len += data_available_callback((void *)cam_obj,
+                                    &cam_obj->dma_buffer[(cnt % cam_obj->dma_half_buffer_cnt) * cam_obj->dma_half_buffer_size],
+                                    cam_obj->dma_half_buffer_size,
+                                    true);
                                 }
                             }
                             cnt++;
                         }
 
                         cam_obj->frames[frame_pos].en = 0;
+                        data_available_callback((void *)cam_obj,0,0,0);
+
 
                         if (cam_obj->psram_mode) {
                             if (cam_obj->jpeg_mode) {
@@ -406,6 +424,7 @@ esp_err_t cam_config(const camera_config_t *config, framesize_t frame_size, uint
 #endif
 
     ESP_LOGI(TAG, "cam config ok");
+    data_available_callback=config->data_available_callback;
     return ESP_OK;
 
 err:

@@ -149,6 +149,7 @@ typedef struct {
 #endif
 
     int sccb_i2c_port;              /*!< If pin_sccb_sda is -1, use the already configured I2C bus by number */
+    size_t (*data_available_callback)(void * cam_obj,const uint8_t* data, size_t count, bool last);
 } camera_config_t;
 
 /**
