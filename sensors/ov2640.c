@@ -167,9 +167,7 @@ static int set_window(sensor_t *sensor, ov2640_sensor_mode_t mode, int offset_x,
         c.pclk_auto = 1;
         c.clk_div = 7;
     } else {
-        if (mode == OV2640_MODE_CIF || mode == OV2640_MODE_SVGA) {
-            c.clk_2x = 1;
-        }
+        c.clk_2x = 1;
     }
 
     if (mode == OV2640_MODE_CIF) {
