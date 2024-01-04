@@ -17,6 +17,8 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 
+static uint8_t s_sharpness = 4;
+
 #if defined(ARDUINO_ARCH_ESP32) && defined(CONFIG_ARDUHAL_ESP_LOG)
 #include "esp32-hal-log.h"
 #else
@@ -442,15 +444,28 @@ static int set_wpc_dsp(sensor_t *sensor, int enable)
     return set_reg_bits(sensor, BANK_DSP, CTRL3, 6, 1, enable?1:0);
 }
 
-//unsupported
+//-2...-1 - blur, 0 - no processing, 1...2 - sharpen, 3 - auto
+//auto is default
 static int set_sharpness(sensor_t *sensor, int level)
 {
-   return -1;
+    if ( level == 3 ) {
+        sensor->set_reg(sensor, 0xff, 0xff, 0x00); //banksel:DSP   BANK_DSP, BANK_SENSOR, BANK_MAX
+        sensor->set_reg(sensor, OV2640_SHARPNESS_AUTO[0], OV2640_SHARPNESS_AUTO[2], OV2640_SHARPNESS_AUTO[1]);
+        return sensor->set_reg(sensor, OV2640_SHARPNESS_AUTO[3+0], OV2640_SHARPNESS_AUTO[3+2], OV2640_SHARPNESS_AUTO[3+1]);
+    } else if ( level >= -3 && level <= 2 ) {
+        sensor->set_reg(sensor, 0xff, 0xff, 0x00); //banksel:DSP   BANK_DSP, BANK_SENSOR, BANK_MAX
+        sensor->set_reg(sensor, OV2640_SHARPNESS_MANUAL[0], OV2640_SHARPNESS_MANUAL[2], OV2640_SHARPNESS_MANUAL[1]);
+        sensor->set_reg(sensor, OV2640_SHARPNESS_MANUAL[3+0], OV2640_SHARPNESS_MANUAL[3+2], OV2640_SHARPNESS_MANUAL[3+1]);
+        int sharpness = level + 3;
+        sensor->set_reg(sensor, OV2640_SETTING_SHARPNESS[sharpness][0], OV2640_SETTING_SHARPNESS[sharpness][2], OV2640_SETTING_SHARPNESS[sharpness][1]);
+        return sensor->set_reg(sensor, OV2640_SETTING_SHARPNESS[sharpness][3+0], OV2640_SETTING_SHARPNESS[sharpness][3+2], OV2640_SETTING_SHARPNESS[sharpness][3+1]);
+    } 
+    return -1;
 }
 
 static int set_denoise(sensor_t *sensor, int level)
 {
-   return -1;
+    return -1;
 }
 
 static int get_reg(sensor_t *sensor, int reg, int mask)
@@ -529,7 +544,7 @@ static int init_status(sensor_t *sensor){
     sensor->status.dcw = get_reg_bits(sensor, BANK_DSP, CTRL2, 5, 1);
     sensor->status.colorbar = get_reg_bits(sensor, BANK_SENSOR, COM7, 1, 1);
 
-    sensor->status.sharpness = 0;//not supported
+    sensor->status.sharpness = s_sharpness;
     sensor->status.denoise = 0;
     return 0;
 }
