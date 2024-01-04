@@ -449,10 +449,12 @@ static int set_wpc_dsp(sensor_t *sensor, int enable)
 static int set_sharpness(sensor_t *sensor, int level)
 {
     if ( level == 3 ) {
+        s_sharpness = level;
         sensor->set_reg(sensor, 0xff, 0xff, 0x00); //banksel:DSP   BANK_DSP, BANK_SENSOR, BANK_MAX
         sensor->set_reg(sensor, OV2640_SHARPNESS_AUTO[0], OV2640_SHARPNESS_AUTO[2], OV2640_SHARPNESS_AUTO[1]);
         return sensor->set_reg(sensor, OV2640_SHARPNESS_AUTO[3+0], OV2640_SHARPNESS_AUTO[3+2], OV2640_SHARPNESS_AUTO[3+1]);
     } else if ( level >= -3 && level <= 2 ) {
+        s_sharpness = level;
         sensor->set_reg(sensor, 0xff, 0xff, 0x00); //banksel:DSP   BANK_DSP, BANK_SENSOR, BANK_MAX
         sensor->set_reg(sensor, OV2640_SHARPNESS_MANUAL[0], OV2640_SHARPNESS_MANUAL[2], OV2640_SHARPNESS_MANUAL[1]);
         sensor->set_reg(sensor, OV2640_SHARPNESS_MANUAL[3+0], OV2640_SHARPNESS_MANUAL[3+2], OV2640_SHARPNESS_MANUAL[3+1]);
