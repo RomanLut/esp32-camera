@@ -14,6 +14,7 @@
 
 #include <stdio.h>
 #include <string.h>
+#include <stdalign.h>
 #include "esp_heap_caps.h"
 #include "ll_cam.h"
 #include "cam_hal.h"
@@ -40,6 +41,8 @@
 
 static const char *TAG = "cam_hal";
 static cam_obj_t *cam_obj = NULL;
+
+static bool s_ovf_flag = false;
 
 static const uint32_t JPEG_SOI_MARKER = 0xFFD8FF;  // written in little-endian for esp32
 static const uint16_t JPEG_EOI_MARKER = 0xD9FF;  // written in little-endian for esp32
@@ -108,6 +111,7 @@ void IRAM_ATTR ll_cam_send_event(cam_obj_t *cam, cam_event_t cam_event, BaseType
         ll_cam_stop(cam);
         cam->state = CAM_STATE_IDLE;
         ESP_CAMERA_ETS_PRINTF(DRAM_STR("cam_hal: EV-%s-OVF\r\n"), cam_event==CAM_IN_SUC_EOF_EVENT ? DRAM_STR("EOF") : DRAM_STR("VSYNC"));
+        s_ovf_flag = true;
     }
 }
 
@@ -189,7 +193,7 @@ static void cam_task(void *arg)
                                     //     &cam_obj->dma_buffer[(cnt % cam_obj->dma_half_buffer_cnt) * cam_obj->dma_half_buffer_size],
                                     //     cam_obj->dma_half_buffer_size);
                                     frame_buffer_event->len += data_available_callback((void *)cam_obj,
-                                    &cam_obj->dma_buffer[(cnt % cam_obj->dma_half_buffer_cnt) * cam_obj->dma_half_buffer_size],
+                                        &cam_obj->dma_buffer[(cnt % cam_obj->dma_half_buffer_cnt) * cam_obj->dma_half_buffer_size],
                                     cam_obj->dma_half_buffer_size,
                                     true);
                                 }
@@ -199,7 +203,6 @@ static void cam_task(void *arg)
 
                         cam_obj->frames[frame_pos].en = 0;
                         data_available_callback((void *)cam_obj,0,0,0);
-
 
                         if (cam_obj->psram_mode) {
                             if (cam_obj->jpeg_mode) {
@@ -283,7 +286,7 @@ static esp_err_t cam_dma_config(const camera_config_t *config)
     cam_obj->dma_buffer = NULL;
     cam_obj->dma = NULL;
 
-    cam_obj->frames = (cam_frame_t *)heap_caps_calloc(1, cam_obj->frame_cnt * sizeof(cam_frame_t), MALLOC_CAP_DEFAULT);
+    cam_obj->frames = (cam_frame_t *)heap_caps_aligned_calloc(alignof(cam_frame_t), 1, cam_obj->frame_cnt * sizeof(cam_frame_t), MALLOC_CAP_DEFAULT);
     CAM_CHECK(cam_obj->frames != NULL, "frames malloc failed", ESP_FAIL);
 
     uint8_t dma_align = 0;
@@ -401,7 +404,11 @@ esp_err_t cam_config(const camera_config_t *config, framesize_t frame_size, uint
     ret = cam_dma_config(config);
     CAM_CHECK_GOTO(ret == ESP_OK, "cam_dma_config failed", err);
 
-    cam_obj->event_queue = xQueueCreate(cam_obj->dma_half_buffer_cnt - 1, sizeof(cam_event_t));
+    size_t queue_size = cam_obj->dma_half_buffer_cnt - 1;
+    if (queue_size == 0) {
+        queue_size = 1;
+    }
+    cam_obj->event_queue = xQueueCreate(queue_size, sizeof(cam_event_t));
     CAM_CHECK_GOTO(cam_obj->event_queue != NULL, "event_queue create failed", err);
 
     size_t frame_buffer_queue_len = cam_obj->frame_cnt;
@@ -450,7 +457,7 @@ esp_err_t cam_deinit(void)
     }
 
     ll_cam_deinit(cam_obj);
-    
+
     if (cam_obj->dma) {
         free(cam_obj->dma);
     }
@@ -488,6 +495,16 @@ camera_fb_t *cam_take(TickType_t timeout)
     camera_fb_t *dma_buffer = NULL;
     TickType_t start = xTaskGetTickCount();
     xQueueReceive(cam_obj->frame_buffer_queue, (void *)&dma_buffer, timeout);
+#if CONFIG_IDF_TARGET_ESP32S3
+    // Currently (22.01.2024) there is a bug in ESP-IDF v5.2, that causes
+    // GDMA to fall into a strange state if it is running while WiFi STA is connecting.
+    // This code tries to reset GDMA if frame is not received, to try and help with
+    // this case. It is possible to have some side effects too, though none come to mind
+    if (!dma_buffer) {
+        ll_cam_dma_reset(cam_obj);
+        xQueueReceive(cam_obj->frame_buffer_queue, (void *)&dma_buffer, timeout);
+    }
+#endif
     if (dma_buffer) {
         if(cam_obj->jpeg_mode){
             // find the end marker for JPEG. Data after that can be discarded
@@ -499,7 +516,11 @@ camera_fb_t *cam_take(TickType_t timeout)
             } else {
                 ESP_LOGW(TAG, "NO-EOI");
                 cam_give(dma_buffer);
-                return cam_take(timeout - (xTaskGetTickCount() - start));//recurse!!!!
+                TickType_t ticks_spent = xTaskGetTickCount() - start;
+                if (ticks_spent >= timeout) {
+                    return NULL; /* We are out of time */
+                }
+                return cam_take(timeout - ticks_spent);//recurse!!!!
             }
         } else if(cam_obj->psram_mode && cam_obj->in_bytes_per_pixel != cam_obj->fb_bytes_per_pixel){
             //currently this is used only for YUV to GRAYSCALE
@@ -508,6 +529,9 @@ camera_fb_t *cam_take(TickType_t timeout)
         return dma_buffer;
     } else {
         ESP_LOGW(TAG, "Failed to get the frame on time!");
+// #if CONFIG_IDF_TARGET_ESP32S3
+//         ll_cam_dma_print_state(cam_obj);
+// #endif
     }
     return NULL;
 }
@@ -520,4 +544,11 @@ void cam_give(camera_fb_t *dma_buffer)
             break;
         }
     }
+}
+
+bool getOVFFlagAndReset()
+{
+    bool res = s_ovf_flag;
+    s_ovf_flag = false;
+    return res;
 }

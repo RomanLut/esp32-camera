@@ -152,7 +152,7 @@ static int set_window(sensor_t *sensor, ov2640_sensor_mode_t mode, int offset_x,
         {VSIZE, max_y & 0xFF},
         {XOFFL, offset_x & 0xFF},
         {YOFFL, offset_y & 0xFF},
-        {VHYX, ((max_y >> 1) & 0X80) | ((offset_y >> 4) & 0X70) | ((max_x >> 5) & 0X08) | ((offset_y >> 8) & 0X07)},
+        {VHYX, ((max_y >> 1) & 0X80) | ((offset_y >> 4) & 0X70) | ((max_x >> 5) & 0X08) | ((offset_x >> 8) & 0X07)},
         {TEST, (max_x >> 2) & 0X80},
         {ZMOW, (w)&0xFF},
         {ZMOH, (h)&0xFF},
@@ -171,6 +171,7 @@ static int set_window(sensor_t *sensor, ov2640_sensor_mode_t mode, int offset_x,
     } else {
         c.clk_2x = 1;
     }
+    ESP_LOGI(TAG, "Set PLL: clk_2x: %u, clk_div: %u, pclk_auto: %u, pclk_div: %u", c.clk_2x, c.clk_div, c.pclk_auto, c.pclk_div);
 
     if (mode == OV2640_MODE_CIF) {
         regs = ov2640_settings_to_cif;
@@ -197,7 +198,6 @@ static int set_window(sensor_t *sensor, ov2640_sensor_mode_t mode, int offset_x,
 
     return ret;
 }
-
 
 static int set_framesize(sensor_t *sensor, framesize_t framesize)
 {
