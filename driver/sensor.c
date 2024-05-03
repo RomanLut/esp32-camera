@@ -36,7 +36,7 @@ const resolution_info_t resolution[FRAMESIZE_INVALID] = {
     { 1600, 1200, ASPECT_RATIO_4X3   }, /* UXGA  */
     // 3MP Sensors
     { 1920, 1080, ASPECT_RATIO_16X9  }, /* FHD   */
-    {  720, 1280, ASPECT_RATIO_9X16  }, /* Portrait HD   */
+    {  800, 450, ASPECT_RATIO_16X9  }, /* Portrait HD   */
     {  864, 1536, ASPECT_RATIO_9X16  }, /* Portrait 3MP   */
     { 2048, 1536, ASPECT_RATIO_4X3   }, /* QXGA  */
     // 5MP Sensors

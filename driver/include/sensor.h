@@ -98,7 +98,7 @@ typedef enum {
     FRAMESIZE_UXGA,     // 1600x1200
     // 3MP Sensors
     FRAMESIZE_FHD,      // 1920x1080
-    FRAMESIZE_P_HD,     //  720x1280
+    FRAMESIZE_P_HD,     //  720x1280   //changed to 800x450
     FRAMESIZE_P_3MP,    //  864x1536
     FRAMESIZE_QXGA,     // 2048x1536
     // 5MP Sensors
