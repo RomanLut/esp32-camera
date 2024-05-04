@@ -37,7 +37,7 @@ const resolution_info_t resolution[FRAMESIZE_INVALID] = {
     // 3MP Sensors
     { 1920, 1080, ASPECT_RATIO_16X9  }, /* FHD   */
     {  800, 456, ASPECT_RATIO_16X9  }, /* Portrait HD   */
-    {  640, 360, ASPECT_RATIO_9X16  }, /* Portrait 3MP   */
+    {  640, 360, ASPECT_RATIO_16X9  }, /* Portrait 3MP   */
     { 2048, 1536, ASPECT_RATIO_4X3   }, /* QXGA  */
     // 5MP Sensors
     { 2560, 1440, ASPECT_RATIO_16X9  }, /* QHD    */

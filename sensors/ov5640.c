@@ -444,12 +444,20 @@ static int set_framesize(sensor_t *sensor, framesize_t framesize)
         if (framesize == FRAMESIZE_SVGA)
         {
             //ret = set_pll(sensor, false, 25, 1, 1, false, 3, true, 4); 
-            ret = set_pll(sensor, false, 23, 1, 1, false, 3, true, 2); 
+            ret = set_pll(sensor, false, 25, 1, 1, false, 3, true, 5); 
+        }
+        else if (framesize == FRAMESIZE_VGA)
+        {
+            ret = set_pll(sensor, false, 25, 1, 1, false, 3, true, 5); 
+        }
+        else if (framesize == FRAMESIZE_HD)
+        {
+            ret = set_pll(sensor, false, 25, 1, 1, false, 3, true, 5); 
         }
         else 
         {
             //ret = set_pll(sensor, false, 19, 1, 1, false, 3, true, 4); 
-            ret = set_pll(sensor, false, 17, 1, 1, false, 3, true, 2); 
+            ret = set_pll(sensor, false, 19, 1, 1, false, 3, true, 5); 
         }
         
     } else {
