@@ -197,7 +197,7 @@ static int calc_sysclk(int xclk, bool pll_bypass, int pll_multiplier, int pll_sy
 
     unsigned int SYSCLK = PLL_CLK / 4;
 
-    ESP_LOGI(TAG, "Calculated XVCLK: %d Hz, REFIN: %u Hz, VCO: %u Hz, PLL_CLK: %u Hz, SYSCLK: %u Hz, PCLK: %u Hz", xclk, REFIN, VCO, PLL_CLK, SYSCLK, PCLK);
+    //ESP_LOGI(TAG, "Calculated XVCLK: %d Hz, REFIN: %u Hz, VCO: %u Hz, PLL_CLK: %u Hz, SYSCLK: %u Hz, PCLK: %u Hz", xclk, REFIN, VCO, PLL_CLK, SYSCLK, PCLK);
     return SYSCLK;
 }
 
@@ -210,7 +210,7 @@ static int set_pll(sensor_t *sensor, bool bypass, uint8_t multiplier, uint8_t sy
     if(multiplier > 127){
         multiplier &= 0xFE;//only even integers above 127
     }
-    ESP_LOGI(TAG, "Set PLL: bypass: %u, multiplier: %u, sys_div: %u, pre_div: %u, root_2x: %u, pclk_root_div: %u, pclk_manual: %u, pclk_div: %u", bypass, multiplier, sys_div, pre_div, root_2x, pclk_root_div, pclk_manual, pclk_div);
+    //ESP_LOGI(TAG, "Set PLL: bypass: %u, multiplier: %u, sys_div: %u, pre_div: %u, root_2x: %u, pclk_root_div: %u, pclk_manual: %u, pclk_div: %u", bypass, multiplier, sys_div, pre_div, root_2x, pclk_root_div, pclk_manual, pclk_div);
 
     calc_sysclk(sensor->xclk_freq_hz, bypass, multiplier, sys_div, pre_div, root_2x, pclk_root_div, pclk_manual, pclk_div);
 
@@ -443,11 +443,13 @@ static int set_framesize(sensor_t *sensor, framesize_t framesize)
         //Set PLL: bypass: 0, multiplier: sys_mul, sys_div: 4, pre_div: 2, root_2x: 0, pclk_root_div: 2, pclk_manual: 1, pclk_div: 4
         if (framesize == FRAMESIZE_SVGA)
         {
-            ret = set_pll(sensor, false, 25, 1, 1, false, 3, true, 4); 
+            //ret = set_pll(sensor, false, 25, 1, 1, false, 3, true, 4); 
+            ret = set_pll(sensor, false, 23, 1, 1, false, 3, true, 2); 
         }
         else 
         {
-            ret = set_pll(sensor, false, 19, 1, 1, false, 3, true, 4); 
+            //ret = set_pll(sensor, false, 19, 1, 1, false, 3, true, 4); 
+            ret = set_pll(sensor, false, 17, 1, 1, false, 3, true, 2); 
         }
         
     } else {
