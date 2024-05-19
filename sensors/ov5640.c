@@ -450,6 +450,14 @@ static int set_framesize(sensor_t *sensor, framesize_t framesize)
         {
             ret = set_pll(sensor, false, 25, 1, 1, false, 3, true, 5); 
         }
+        else if (framesize == FRAMESIZE_XGA)
+        {
+            ret = set_pll(sensor, false, 32, 1, 1, false, 3, true, 5); 
+        }
+        else if (framesize == FRAMESIZE_SXGA)
+        {
+            ret = set_pll(sensor, false, 32, 1, 1, false, 3, true, 5); 
+        }
         else if (framesize == FRAMESIZE_HD)
         {
             ret = set_pll(sensor, false, 25, 1, 1, false, 3, true, 5); 
