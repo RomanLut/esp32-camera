@@ -338,7 +338,7 @@ static int set_image_options(sensor_t *sensor)
     }
 
     // H-Mirror
-    if (sensor->status.hmirror) {
+    if (!sensor->status.hmirror) {
         reg21 |= 0x06;
         reg4514_test |= 2;
     }
