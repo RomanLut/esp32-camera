@@ -432,6 +432,8 @@ static int set_framesize(sensor_t *sensor, framesize_t framesize)
     }
 
     if (sensor->pixformat == PIXFORMAT_JPEG) {
+        
+        /*
         //10MHz PCLK
         uint8_t sys_mul = 200;
         if(framesize < FRAMESIZE_QVGA || sensor->xclk_freq_hz == 16000000){
@@ -439,33 +441,48 @@ static int set_framesize(sensor_t *sensor, framesize_t framesize)
         } else if(framesize < FRAMESIZE_XGA){
             sys_mul = 180;
         }
-        //ret = set_pll(sensor, false, sys_mul, 4, 2, false, 2, true, 4);
-        //Set PLL: bypass: 0, multiplier: sys_mul, sys_div: 4, pre_div: 2, root_2x: 0, pclk_root_div: 2, pclk_manual: 1, pclk_div: 4
-        if (framesize == FRAMESIZE_SVGA)
+        ret = set_pll(sensor, false, sys_mul, 4, 2, false, 2, true, 4);
+        Set PLL: bypass: 0, multiplier: sys_mul, sys_div: 4, pre_div: 2, root_2x: 0, pclk_root_div: 2, pclk_manual: 1, pclk_div: 4
+        */
+
+        //for XLCK=20Mhz
+        if (framesize == FRAMESIZE_SVGA ) //800x600
         {
-            //ret = set_pll(sensor, false, 25, 1, 1, false, 3, true, 4); 
-            ret = set_pll(sensor, false, 25, 1, 1, false, 3, true, 5); 
+            //ret = set_pll(sensor, false, 30, 1, 1, false, 3, true, 3); //10 mhz pclk
+            ret = set_pll(sensor, false, 30, 1, 1, false, 2, true, 3); //20 mhz pclk
         }
-        else if (framesize == FRAMESIZE_VGA)
+        else if (framesize == FRAMESIZE_P_HD) //800x456
         {
-            ret = set_pll(sensor, false, 25, 1, 1, false, 3, true, 5); 
+            ret = set_pll(sensor, false, 23, 1, 1, false, 2, true, 3); //15.3 mhz pclk
         }
-        else if (framesize == FRAMESIZE_XGA)
+        else if (framesize == FRAMESIZE_VGA) //640x480
         {
-            ret = set_pll(sensor, false, 32, 1, 1, false, 3, true, 5); 
+            ret = set_pll(sensor, false, 30, 1, 1, false, 2, true, 3); //20 mhz pclk
         }
-        else if (framesize == FRAMESIZE_SXGA)
+        else if (framesize == FRAMESIZE_P_3MP) //640x360
         {
-            ret = set_pll(sensor, false, 32, 1, 1, false, 3, true, 5); 
+            ret = set_pll(sensor, false, 23, 1, 1, false, 2, true, 3); //15.3 mhz pclk
         }
-        else if (framesize == FRAMESIZE_HD)
+        else if (framesize == FRAMESIZE_XGA)  //1024x768 
         {
-            ret = set_pll(sensor, false, 25, 1, 1, false, 3, true, 5); 
+            ret = set_pll(sensor, false, 39, 1, 1, false, 2, true, 5); //15.3 mhz pclk 
+        }
+        else if (framesize == FRAMESIZE_P_FHD)  //1024x576 
+        {
+            ret = set_pll(sensor, false, 29, 1, 1, false, 2, true, 3);  //19.3 mhz pclk
+        }
+        else if (framesize == FRAMESIZE_SXGA)  //1280x960
+        {
+            ret = set_pll(sensor, false, 39, 1, 1, false, 2, true, 5); //15.6 mhz pclk
+        }
+        else if (framesize == FRAMESIZE_HD)  //1280x720 //19.3 mhz pclk
+        {
+            ret = set_pll(sensor, false, 29, 1, 1, false, 2, true, 3); 
         }
         else 
         {
             //ret = set_pll(sensor, false, 19, 1, 1, false, 3, true, 4); 
-            ret = set_pll(sensor, false, 19, 1, 1, false, 3, true, 5); 
+            ret = set_pll(sensor, false, 19, 1, 1, false, 2, true, 3); 
         }
         
     } else {
